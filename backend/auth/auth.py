@@ -25,9 +25,11 @@ def verify_image(image_bytes: bytes, stored_hash: str) -> bool:
 
 # ---------- REGISTER ----------
 
-def register_user(username, password, image_bytes):
+def register_user(username, email, phone, password, image_bytes):
     return insert_user(
         username,
+        email,
+        phone,
         hash_password(password),
         hash_image(image_bytes)
     )

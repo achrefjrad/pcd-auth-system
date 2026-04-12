@@ -19,6 +19,8 @@ def create_tables():
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
+        email TEXT NOT NULL,
+        phone TEXT NOT NULL,
         password_hash TEXT NOT NULL,
         image_hash TEXT NOT NULL
     )
@@ -32,19 +34,25 @@ def create_tables():
     )
     """)
 
+    try:
+        cursor.execute("SELECT email FROM users LIMIT 1")
+    except sqlite3.OperationalError:
+        cursor.execute("ALTER TABLE users ADD COLUMN email TEXT NOT NULL DEFAULT ''")
+        cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT NOT NULL DEFAULT ''")
+
     conn.commit()
     conn.close()
 
 
 # ---------- USERS ----------
 
-def insert_user(username, password_hash, image_hash):
+def insert_user(username, email, phone, password_hash, image_hash):
     conn = get_connection()
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO users (username, password_hash, image_hash) VALUES (?, ?, ?)",
-            (username, password_hash, image_hash)
+            "INSERT INTO users (username, email, phone, password_hash, image_hash) VALUES (?, ?, ?, ?, ?)",
+            (username, email, phone, password_hash, image_hash)
         )
         conn.commit()
         return True
@@ -58,7 +66,7 @@ def get_user_by_username(username):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT username, password_hash, image_hash FROM users WHERE username = ?",
+        "SELECT username, email, phone, password_hash, image_hash FROM users WHERE username = ?",
         (username,)
     )
     row = cursor.fetchone()
