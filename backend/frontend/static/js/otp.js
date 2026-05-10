@@ -1,14 +1,24 @@
 // otp.js - OTP verification without QR display
 // OTP is now sent via email instead of displaying QR code
 
-const API_BASE_URL = "http://127.0.0.1:5000";
+const API_BASE_URL = window.location.origin || "http://127.0.0.1:5000";
 
 const query = new URLSearchParams(window.location.search);
 const username = query.get("username") || sessionStorage.getItem("username") || localStorage.getItem("username");
+const isResetFlow = query.get("reset") === "true";
 
 const errorMsg = document.getElementById('errorMessage');
 const successMsg = document.getElementById('successMessage');
 const otpForm = document.getElementById("otpForm");
+
+// Update title if this is a password reset flow
+if (isResetFlow) {
+  document.title = "Verify OTP - Password Reset | SecureAuth";
+  const h1 = document.querySelector('h1');
+  if (h1) h1.textContent = "Verify OTP for Password Reset";
+  const p = document.querySelector('.text-muted-foreground');
+  if (p) p.textContent = "Enter the OTP code sent to your email to reset your password.";
+}
 
 // Store username for OTP verification
 if (username) {
@@ -49,15 +59,23 @@ otpForm?.addEventListener("submit", async function(e) {
       throw new Error(data.message || "OTP verification failed");
     }
 
-    successMsg.textContent = "Login successful!";
-    successMsg.classList.remove('hidden');
-    
     localStorage.removeItem("username");
     sessionStorage.removeItem("username");
     
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 1500);
+    // Check if redirect is needed (password reset flow)
+    if (data.redirect) {
+      successMsg.textContent = "OTP verified! Redirecting...";
+      successMsg.classList.remove('hidden');
+      setTimeout(() => {
+        window.location.href = data.redirect;
+      }, 1000);
+    } else {
+      successMsg.textContent = "Login successful!";
+      successMsg.classList.remove('hidden');
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+    }
   } catch (error) {
     errorMsg.textContent = error.message || "Unable to verify OTP";
     errorMsg.classList.remove('hidden');

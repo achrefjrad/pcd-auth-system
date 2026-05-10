@@ -1,9 +1,19 @@
 // login.js - Extracted from login.html
 // Contains: password toggle, image upload, form submission
 
-const API_BASE_URL = "http://127.0.0.1:5000";
+const API_BASE_URL = window.location.origin || "http://127.0.0.1:5000";
 
 let selectedImage = null;
+
+// Check for password reset success message
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('reset') === 'success') {
+  const successMessage = document.createElement('div');
+  successMessage.className = 'p-3 rounded-lg bg-success/10 border border-success text-success text-sm text-center mb-4';
+  successMessage.textContent = 'Password reset successful! Please log in with your new password.';
+  const form = document.getElementById('loginForm');
+  form.insertBefore(successMessage, form.firstChild);
+}
 
 function handleImageSelect(input) {
   if (input.files && input.files[0]) {

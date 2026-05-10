@@ -74,6 +74,29 @@ def get_user_by_username(username):
     return dict(row) if row else None
 
 
+def get_user_by_email(email):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT username, email, phone, password_hash, image_hash FROM users WHERE email = ?",
+        (email,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+
+def update_user_password(username, new_password_hash):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE users SET password_hash = ? WHERE username = ?",
+        (new_password_hash, username)
+    )
+    conn.commit()
+    conn.close()
+
+
 # ---------- OTP ----------
 
 def store_otp(username, otp_hash, expires_at):

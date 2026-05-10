@@ -19,7 +19,7 @@ SMTP_PORT = 587
 OTP_VALIDITY_MINUTES = 5
 
 
-def send_otp_email(user_email, otp, qr_image_path=None):
+def send_otp_email(user_email, otp, qr_image_path=None, is_password_reset=False):
     """
     Send OTP email to the user with QR code attachment and OTP text.
     
@@ -27,6 +27,7 @@ def send_otp_email(user_email, otp, qr_image_path=None):
         user_email: User's email address
         otp: The OTP code to send
         qr_image_path: Path to QR code image file (optional)
+        is_password_reset: If True, send password reset email instead of login OTP
     
     Returns:
         True if email sent successfully, False otherwise
@@ -36,13 +37,33 @@ def send_otp_email(user_email, otp, qr_image_path=None):
         msg = MIMEMultipart()
         msg['From'] = EMAIL_ADDRESS
         msg['To'] = user_email
-        msg['Subject'] = "Your SecureAuth OTP Code"
+        
+        # Set subject based on email type
+        if is_password_reset:
+            msg['Subject'] = "SecureAuth Password Reset"
+        else:
+            msg['Subject'] = "Your SecureAuth OTP Code"
         
         # Calculate expiration time
         expiration_time = (datetime.now() + timedelta(minutes=OTP_VALIDITY_MINUTES)).strftime("%H:%M")
         
         # Email body
-        body = f"""Hello,
+        if is_password_reset:
+            body = f"""Hello,
+
+You requested a password reset for your SecureAuth account.
+
+Your verification code is: {otp}
+
+This code will expire at {expiration_time}.
+
+If you did not request a password reset, please ignore this email.
+
+Best regards,
+SecureAuth Team
+"""
+        else:
+            body = f"""Hello,
 
 Your SecureAuth verification code is: {otp}
 
@@ -74,7 +95,7 @@ SecureAuth Team
             server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
             server.send_message(msg)
         
-        print(f"[EMAIL SENT] OTP sent to {user_email}")
+        print(f"[EMAIL SENT] OTP sent to {user_email}" + (" (Password Reset)" if is_password_reset else ""))
         return True
         
     except Exception as e:
@@ -82,7 +103,7 @@ SecureAuth Team
         return False
 
 
-def send_otp_email_with_qr(user_email, otp, qr_base64=None):
+def send_otp_email_with_qr(user_email, otp, qr_base64=None, is_password_reset=False):
     """
     Send OTP email with QR code from base64 data.
     
@@ -90,6 +111,7 @@ def send_otp_email_with_qr(user_email, otp, qr_base64=None):
         user_email: User's email address
         otp: The OTP code to send
         qr_base64: Base64 encoded QR code image (optional)
+        is_password_reset: If True, send password reset email instead of login OTP
     
     Returns:
         True if email sent successfully, False otherwise
@@ -111,7 +133,7 @@ def send_otp_email_with_qr(user_email, otp, qr_base64=None):
         except Exception as e:
             print(f"Warning: Could not save QR code: {e}")
     
-    result = send_otp_email(user_email, otp, qr_path)
+    result = send_otp_email(user_email, otp, qr_path, is_password_reset)
     
     # Clean up temp file
     if qr_path and os.path.exists(qr_path):
